@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Canon</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap');
+
+:root{
+  --ink:#15130f;
+  --panel:#1d1a14;
+  --panel2:#241f18;
+  --ivory:#ece4d4;
+  --ivory-dim:#b9ae98;
+  --brass:#8c7851;
+  --brass-dim:#4a4133;
+  --amber:#e8a33d;
+  --amber-dim:#6b5426;
+  --burgundy:#7a3b3b;
+  --sage:#5f7a5c;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0; padding:0; background:var(--ink); color:var(--ivory); font-family:'Source Serif 4', Georgia, serif;}
+body{padding-bottom:40px;}
+
+.marquee{
+  position:sticky; top:0; z-index:20;
+  background:var(--ink);
+  border-bottom:1px solid var(--brass-dim);
+  padding:18px 16px 12px;
+}
+.marquee::after{
+  content:"";
+  display:block;
+  height:6px;
+  margin-top:12px;
+  background-image: radial-gradient(circle, var(--ink) 2.5px, var(--brass-dim) 3px, transparent 3.4px);
+  background-size: 16px 16px;
+  background-position: 0 -5px;
+}
+h1{
+  font-family:'Bebas Neue', sans-serif;
+  letter-spacing:2px;
+  font-size:34px;
+  margin:0;
+  color:var(--amber);
+  line-height:1;
+}
+.sub{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:11px;
+  color:var(--ivory-dim);
+  margin-top:4px;
+  letter-spacing:0.5px;
+}
+
+.progress-row{
+  display:flex; align-items:center; gap:10px;
+  margin-top:14px;
+}
+.progress-track{
+  flex:1; height:6px; border-radius:3px;
+  background:var(--panel2);
+  overflow:hidden;
+  border:1px solid var(--brass-dim);
+}
+.progress-fill{
+  height:100%; background:var(--amber);
+  transition:width .35s ease;
+}
+.progress-count{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12px; color:var(--amber);
+  white-space:nowrap;
+}
+
+.controls{ margin-top:14px; display:flex; flex-direction:column; gap:8px; }
+.search-wrap{ position:relative; }
+#search{
+  width:100%; padding:10px 12px; font-size:14px;
+  background:var(--panel); border:1px solid var(--brass-dim);
+  border-radius:6px; color:var(--ivory);
+  font-family:'Source Serif 4', serif;
+}
+#search::placeholder{ color:var(--ivory-dim); }
+#search:focus{ outline:none; border-color:var(--amber); }
+
+.chip-row{
+  display:flex; gap:6px; overflow-x:auto; padding-bottom:4px;
+  scrollbar-width:none;
+}
+.chip-row::-webkit-scrollbar{ display:none; }
+.chip{
+  flex:0 0 auto;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:11px; letter-spacing:0.3px;
+  padding:6px 11px; border-radius:20px;
+  border:1px solid var(--brass-dim);
+  background:transparent; color:var(--ivory-dim);
+  cursor:pointer; white-space:nowrap;
+}
+.chip.active{ background:var(--amber-dim); border-color:var(--amber); color:var(--amber); }
+
+.status-row{ display:flex; gap:6px; }
+.status-btn{
+  flex:1; font-family:'IBM Plex Mono', monospace; font-size:11px;
+  padding:7px 8px; border-radius:6px;
+  border:1px solid var(--brass-dim); background:transparent; color:var(--ivory-dim);
+  cursor:pointer;
+}
+.status-btn.active{ background:var(--panel2); border-color:var(--amber); color:var(--amber); }
+
+.sort-select{
+  font-family:'IBM Plex Mono', monospace; font-size:11px;
+  background:var(--panel); color:var(--ivory-dim);
+  border:1px solid var(--brass-dim); border-radius:6px; padding:7px 8px;
+}
+
+.list{ padding:14px 12px 0; display:flex; flex-direction:column; gap:10px; }
+.empty{
+  text-align:center; color:var(--ivory-dim); font-family:'IBM Plex Mono', monospace;
+  font-size:12px; padding:40px 20px;
+}
+
+.card{
+  display:flex;
+  background:var(--panel);
+  border:1px solid var(--brass-dim);
+  border-radius:8px;
+  overflow:hidden;
+  transition:border-color .2s ease;
+}
+.card.watched{ border-color:var(--amber-dim); }
+
+.card-main{ flex:1; padding:12px 12px; min-width:0; cursor:pointer; }
+.card-top{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+.card-title{ font-size:16px; font-weight:600; color:var(--ivory); line-height:1.25; }
+.card-year{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--brass); flex:0 0 auto; }
+.card-genres{ margin-top:4px; font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--sage); letter-spacing:0.3px; }
+.card-director{ margin-top:2px; font-size:12px; color:var(--ivory-dim); font-style:italic; }
+
+.card-detail{ display:none; margin-top:10px; padding-top:10px; border-top:1px dashed var(--brass-dim); }
+.card-detail.open{ display:block; }
+.card-desc{ font-size:13.5px; color:var(--ivory); line-height:1.5; }
+.card-cast{ margin-top:8px; font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ivory-dim); line-height:1.6; }
+.card-cast b{ color:var(--brass); font-weight:500; }
+.cast-name{ cursor:pointer; text-decoration:underline; text-decoration-color:var(--brass-dim); text-underline-offset:2px; }
+.cast-name:hover{ color:var(--amber); }
+
+.stub{
+  flex:0 0 56px;
+  border-left:2px dashed var(--brass-dim);
+  position:relative;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--panel2);
+}
+.stub::before, .stub::after{
+  content:""; position:absolute; left:-7px; width:14px; height:14px;
+  border-radius:50%; background:var(--ink);
+}
+.stub::before{ top:-7px; }
+.stub::after{ bottom:-7px; }
+
+.punch{
+  width:30px; height:30px; border-radius:50%;
+  border:2px solid var(--brass);
+  background:transparent;
+  cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'IBM Plex Mono', monospace; font-size:14px;
+  color:transparent;
+  transition:all .15s ease;
+}
+.punch.on{
+  background:var(--amber); border-color:var(--amber); color:var(--ink);
+}
+.rank{
+  position:absolute; bottom:6px; left:0; right:0; text-align:center;
+  font-family:'IBM Plex Mono', monospace; font-size:9px; color:var(--brass-dim);
+}
+
+.footnote{
+  margin:24px 16px 0; font-family:'IBM Plex Mono', monospace; font-size:10.5px;
+  color:var(--ivory-dim); line-height:1.6; opacity:0.7;
+}
+</style>
+</head>
+<body>
+
+<div class="marquee">
+  <h1>THE CANON</h1>
+  <div class="sub" id="subCount">essential films &middot; a personal watchlist</div>
+  <div class="progress-row">
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-count" id="progressCount">0 / 0</div>
+  </div>
+  <div class="controls">
+    <div class="search-wrap">
+      <input id="search" type="text" placeholder="Search title or actor&hellip;" autocomplete="off">
+    </div>
+    <div class="chip-row" id="genreRow"></div>
+    <div class="status-row">
+      <button class="status-btn active" data-status="all">All</button>
+      <button class="status-btn" data-status="unwatched">To watch</button>
+      <button class="status-btn" data-status="watched">Watched</button>
+      <select class="sort-select" id="sortSelect">
+        <option value="rank">Rank</option>
+        <option value="az">A&ndash;Z</option>
+        <option value="year">Year</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div class="list" id="list"></div>
+<div class="footnote">Curated selection inspired by IMDb's Top 250 and Criterion-caliber classics &mdash; not a live feed. Tap a title to see cast &amp; synopsis. Progress saves automatically on this device.</div>
+
+<script>
+const MOVIES = [
+{t:"The Shawshank Redemption",y:1994,d:"Frank Darabont",g:["Drama"],c:["Tim Robbins","Morgan Freeman","Bob Gunton","William Sadler"],x:"A banker wrongly convicted of murder finds hope and friendship over decades inside Shawshank prison."},
+{t:"The Godfather",y:1972,d:"Francis Ford Coppola",g:["Crime","Drama"],c:["Marlon Brando","Al Pacino","James Caan","Robert Duvall"],x:"The aging head of a crime family transfers control to his reluctant son Michael."},
+{t:"The Dark Knight",y:2008,d:"Christopher Nolan",g:["Action","Crime","Drama"],c:["Christian Bale","Heath Ledger","Aaron Eckhart","Michael Caine"],x:"Batman faces the Joker, a chaos-driven criminal mastermind, as Gotham teeters on collapse."},
+{t:"The Godfather Part II",y:1974,d:"Francis Ford Coppola",g:["Crime","Drama"],c:["Al Pacino","Robert De Niro","Robert Duvall","Diane Keaton"],x:"Michael Corleone consolidates power while flashbacks trace his father Vito's rise decades earlier."},
+{t:"12 Angry Men",y:1957,d:"Sidney Lumet",g:["Crime","Drama"],c:["Henry Fonda","Lee J. Cobb","Martin Balsam","John Fiedler"],x:"A single holdout juror forces eleven others to re-examine a seemingly open-and-shut murder case."},
+{t:"Schindler's List",y:1993,d:"Steven Spielberg",g:["Biography","Drama","History"],c:["Liam Neeson","Ralph Fiennes","Ben Kingsley","Caroline Goodall"],x:"A German industrialist gradually risks everything to save over a thousand Jewish workers during the Holocaust."},
+{t:"The Lord of the Rings: The Return of the King",y:2003,d:"Peter Jackson",g:["Action","Adventure","Fantasy"],c:["Elijah Wood","Viggo Mortensen","Ian McKellen","Sean Astin"],x:"Frodo and Sam near Mount Doom as the free peoples of Middle-earth make their final stand."},
+{t:"Pulp Fiction",y:1994,d:"Quentin Tarantino",g:["Crime","Drama"],c:["John Travolta","Samuel L. Jackson","Uma Thurman","Bruce Willis"],x:"The lives of hitmen, a boxer, and a gangster's wife intertwine across a nonlinear Los Angeles crime saga."},
+{t:"The Lord of the Rings: The Fellowship of the Ring",y:2001,d:"Peter Jackson",g:["Action","Adventure","Fantasy"],c:["Elijah Wood","Ian McKellen","Orlando Bloom","Sean Bean"],x:"A hobbit inherits a ring of immense power and sets out with companions to destroy it."},
+{t:"The Good, the Bad and the Ugly",y:1966,d:"Sergio Leone",g:["Adventure","Western"],c:["Clint Eastwood","Eli Wallach","Lee Van Cleef","Aldo Giuffr\u00e8"],x:"Three gunslingers race each other to a fortune in gold buried during the American Civil War."},
+{t:"Forrest Gump",y:1994,d:"Robert Zemeckis",g:["Drama","Romance"],c:["Tom Hanks","Robin Wright","Gary Sinise","Sally Field"],x:"A slow-witted but kind Alabama man stumbles through decades of American history and enduring love."},
+{t:"The Lord of the Rings: The Two Towers",y:2002,d:"Peter Jackson",g:["Action","Adventure","Fantasy"],c:["Elijah Wood","Ian McKellen","Viggo Mortensen","Andy Serkis"],x:"The fellowship, now scattered, fights on multiple fronts as Rohan faces an army of Isengard."},
+{t:"Fight Club",y:1999,d:"David Fincher",g:["Drama"],c:["Brad Pitt","Edward Norton","Meat Loaf","Zach Grenier"],x:"An insomniac office worker and a soap salesman build an underground fight club that spirals out of control."},
+{t:"Inception",y:2010,d:"Christopher Nolan",g:["Action","Adventure","Sci-Fi"],c:["Leonardo DiCaprio","Joseph Gordon-Levitt","Elliot Page","Tom Hardy"],x:"A thief who steals secrets from dreams is offered a chance to plant an idea instead."},
+{t:"Star Wars: The Empire Strikes Back",y:1980,d:"Irvin Kershner",g:["Action","Adventure","Fantasy"],c:["Mark Hamill","Harrison Ford","Carrie Fisher","Billy Dee Williams"],x:"The Rebel Alliance is scattered by the Empire as Luke trains in the ways of the Force."},
+{t:"The Matrix",y:1999,d:"Lana &amp; Lilly Wachowski",g:["Action","Sci-Fi"],c:["Keanu Reeves","Laurence Fishburne","Carrie-Anne Moss","Hugo Weaving"],x:"A hacker learns that reality is a simulation and joins a rebellion against machine overlords."},
+{t:"Goodfellas",y:1990,d:"Martin Scorsese",g:["Biography","Crime","Drama"],c:["Robert De Niro","Ray Liotta","Joe Pesci","Lorraine Bracco"],x:"A young man's rise through the mob unravels into paranoia, betrayal, and violence."},
+{t:"One Flew Over the Cuckoo's Nest",y:1975,d:"Milos Forman",g:["Drama"],c:["Jack Nicholson","Louise Fletcher","Will Sampson","William Redfield"],x:"A rebellious inmate clashes with a tyrannical nurse inside a repressive mental institution."},
+{t:"Se7en",y:1995,d:"David Fincher",g:["Crime","Drama","Mystery"],c:["Morgan Freeman","Brad Pitt","Gwyneth Paltrow","Kevin Spacey"],x:"Two detectives hunt a serial killer who stages murders around the seven deadly sins."},
+{t:"Seven Samurai",y:1954,d:"Akira Kurosawa",g:["Action","Drama"],c:["Toshiro Mifune","Takashi Shimura","Keiko Tsushima","Yukiko Shimazaki"],x:"A poor village hires seven ronin to defend it against marauding bandits."},
+{t:"It's a Wonderful Life",y:1946,d:"Frank Capra",g:["Drama","Family","Fantasy"],c:["James Stewart","Donna Reed","Lionel Barrymore","Thomas Mitchell"],x:"A despairing man is shown by an angel how much his life has meant to those around him."},
+{t:"The Silence of the Lambs",y:1991,d:"Jonathan Demme",g:["Crime","Drama","Thriller"],c:["Jodie Foster","Anthony Hopkins","Scott Glenn","Ted Levine"],x:"A trainee FBI agent consults an imprisoned cannibal to catch another serial killer."},
+{t:"City of God",y:2002,d:"Fernando Meirelles",g:["Crime","Drama"],c:["Alexandre Rodrigues","Leandro Firmino","Phellipe Haagensen","Douglas Silva"],x:"Two boys in Rio's slums take opposite paths as gang violence engulfs their neighborhood over decades."},
+{t:"Saving Private Ryan",y:1998,d:"Steven Spielberg",g:["Drama","War"],c:["Tom Hanks","Matt Damon","Tom Sizemore","Edward Burns"],x:"A squad is sent behind enemy lines after D-Day to bring home a soldier whose brothers have died."},
+{t:"Life Is Beautiful",y:1997,d:"Roberto Benigni",g:["Comedy","Drama","Romance"],c:["Roberto Benigni","Nicoletta Braschi","Giorgio Cantarini","Giustino Durano"],x:"A father shields his young son from the horror of a concentration camp through an elaborate game."},
+{t:"The Green Mile",y:1999,d:"Frank Darabont",g:["Crime","Drama","Fantasy"],c:["Tom Hanks","Michael Clarke Duncan","David Morse","Bonnie Hunt"],x:"A death row guard discovers a gentle giant inmate possesses an extraordinary healing gift."},
+{t:"Interstellar",y:2014,d:"Christopher Nolan",g:["Adventure","Drama","Sci-Fi"],c:["Matthew McConaughey","Anne Hathaway","Jessica Chastain","Michael Caine"],x:"A pilot leads a mission through a wormhole to find humanity a new home as Earth dies."},
+{t:"Star Wars",y:1977,d:"George Lucas",g:["Action","Adventure","Fantasy"],c:["Mark Hamill","Harrison Ford","Carrie Fisher","Alec Guinness"],x:"A farm boy joins a rebellion to destroy an empire's planet-killing battle station."},
+{t:"Terminator 2: Judgment Day",y:1991,d:"James Cameron",g:["Action","Sci-Fi"],c:["Arnold Schwarzenegger","Linda Hamilton","Edward Furlong","Robert Patrick"],x:"A reprogrammed cyborg protects a young boy from a shape-shifting killer sent from the future."},
+{t:"Back to the Future",y:1985,d:"Robert Zemeckis",g:["Adventure","Comedy","Sci-Fi"],c:["Michael J. Fox","Christopher Lloyd","Lea Thompson","Crispin Glover"],x:"A teenager is accidentally sent thirty years into the past in a time-traveling DeLorean."},
+{t:"Spirited Away",y:2001,d:"Hayao Miyazaki",g:["Animation","Adventure","Family"],c:["Rumi Hiiragi","Miyu Irino","Mari Natsuki"],x:"A girl trapped in a spirit world must work in a bathhouse to save her transformed parents."},
+{t:"The Pianist",y:2002,d:"Roman Polanski",g:["Biography","Drama","Music"],c:["Adrien Brody","Thomas Kretschmann","Frank Finlay","Emilia Fox"],x:"A Polish-Jewish pianist struggles to survive alone in the ruins of Warsaw during WWII."},
+{t:"Parasite",y:2019,d:"Bong Joon Ho",g:["Comedy","Drama","Thriller"],c:["Song Kang-ho","Lee Sun-kyun","Cho Yeo-jeong","Choi Woo-shik"],x:"A poor family schemes its way into the household of a wealthy one, with escalating consequences."},
+{t:"Psycho",y:1960,d:"Alfred Hitchcock",g:["Horror","Mystery","Thriller"],c:["Anthony Perkins","Janet Leigh","Vera Miles","John Gavin"],x:"A secretary on the run checks into a motel run by a disturbed young man and his mother."},
+{t:"L\u00e9on: The Professional",y:1994,d:"Luc Besson",g:["Action","Crime","Drama"],c:["Jean Reno","Gary Oldman","Natalie Portman","Danny Aiello"],x:"A hitman reluctantly takes in a young girl after her family is murdered by corrupt agents."},
+{t:"The Lion King",y:1994,d:"Roger Allers, Rob Minkoff",g:["Animation","Adventure","Drama"],c:["Matthew Broderick","Jeremy Irons","James Earl Jones","Moira Kelly"],x:"A young lion prince flees his kingdom after his father's murder and must reclaim his throne."},
+{t:"Gladiator",y:2000,d:"Ridley Scott",g:["Action","Adventure","Drama"],c:["Russell Crowe","Joaquin Phoenix","Connie Nielsen","Oliver Reed"],x:"A betrayed Roman general is enslaved and rises through the gladiator arena seeking revenge."},
+{t:"American History X",y:1998,d:"Tony Kaye",g:["Crime","Drama"],c:["Edward Norton","Edward Furlong","Beverly D'Angelo","Jennifer Lien"],x:"A reformed neo-Nazi tries to keep his younger brother from following his violent path."},
+{t:"The Departed",y:2006,d:"Martin Scorsese",g:["Crime","Drama","Thriller"],c:["Leonardo DiCaprio","Matt Damon","Jack Nicholson","Mark Wahlberg"],x:"An undercover cop and a mob mole race to expose each other inside the Boston underworld."},
+{t:"The Usual Suspects",y:1995,d:"Bryan Singer",g:["Crime","Drama","Mystery"],c:["Kevin Spacey","Gabriel Byrne","Chazz Palminteri","Stephen Baldwin"],x:"A small-time con man recounts the elaborate heist that led to a deadly boat explosion."},
+{t:"Whiplash",y:2014,d:"Damien Chazelle",g:["Drama","Music"],c:["Miles Teller","J.K. Simmons","Melissa Benoist","Paul Reiser"],x:"An ambitious young drummer is pushed to his breaking point by an abusive conservatory instructor."},
+{t:"The Prestige",y:2006,d:"Christopher Nolan",g:["Drama","Mystery","Sci-Fi"],c:["Hugh Jackman","Christian Bale","Michael Caine","Scarlett Johansson"],x:"Two rival stage magicians escalate a bitter feud with increasingly dangerous illusions."},
+{t:"Casablanca",y:1942,d:"Michael Curtiz",g:["Drama","Romance","War"],c:["Humphrey Bogart","Ingrid Bergman","Paul Henreid","Claude Rains"],x:"A cynical nightclub owner in Vichy Morocco must choose between love and the resistance."},
+{t:"The Intouchables",y:2011,d:"Olivier Nakache, \u00c9ric Toledano",g:["Biography","Comedy","Drama"],c:["Fran\u00e7ois Cluzet","Omar Sy","Anne Le Ny","Audrey Fleurot"],x:"A wealthy quadriplegic hires an unconventional caretaker from the projects, and an unlikely friendship forms."},
+{t:"Harakiri",y:1962,d:"Masaki Kobayashi",g:["Drama","Mystery"],c:["Tatsuya Nakadai","Akira Ishihama","Shima Iwashita"],x:"A ronin's request to commit ritual suicide at a feudal estate unravels a story of vengeance."},
+{t:"Modern Times",y:1936,d:"Charlie Chaplin",g:["Comedy","Drama","Family"],c:["Charlie Chaplin","Paulette Goddard","Henry Bergman"],x:"The Tramp struggles to survive industrialization, unemployment, and the machinery of modern life."},
+{t:"Once Upon a Time in the West",y:1968,d:"Sergio Leone",g:["Western"],c:["Henry Fonda","Charles Bronson","Claudia Cardinale","Jason Robards"],x:"A mysterious harmonica-playing gunslinger seeks revenge as the railroad carves up the frontier."},
+{t:"Grave of the Fireflies",y:1988,d:"Isao Takahata",g:["Animation","Drama","War"],c:["Tsutomu Tatsumi","Ayano Shiraishi"],x:"A boy and his little sister struggle to survive alone in the final months of WWII Japan."},
+{t:"Rear Window",y:1954,d:"Alfred Hitchcock",g:["Mystery","Thriller"],c:["James Stewart","Grace Kelly","Wendell Corey","Thelma Ritter"],x:"A photographer laid up with a broken leg suspects a neighbor across the courtyard of murder."},
+{t:"Alien",y:1979,d:"Ridley Scott",g:["Horror","Sci-Fi"],c:["Sigourney Weaver","Tom Skerritt","John Hurt","Veronica Cartwright"],x:"The crew of a commercial spacecraft is hunted by a lethal creature that stowed aboard."},
+{t:"City Lights",y:1931,d:"Charlie Chaplin",g:["Comedy","Drama","Romance"],c:["Charlie Chaplin","Virginia Cherrill","Florence Lee"],x:"The Tramp falls for a blind flower seller and schemes to fund a cure for her sight."},
+{t:"Apocalypse Now",y:1979,d:"Francis Ford Coppola",g:["Drama","War"],c:["Martin Sheen","Marlon Brando","Robert Duvall","Frederic Forrest"],x:"An officer travels upriver into Cambodia to assassinate a renegade colonel gone mad."},
+{t:"Memento",y:2000,d:"Christopher Nolan",g:["Mystery","Thriller"],c:["Guy Pearce","Carrie-Anne Moss","Joe Pantoliano"],x:"A man with no short-term memory hunts his wife's killer using notes and tattoos."},
+{t:"Raiders of the Lost Ark",y:1981,d:"Steven Spielberg",g:["Action","Adventure"],c:["Harrison Ford","Karen Allen","Paul Freeman","Ronald Lacey"],x:"An archaeologist races Nazi agents to recover the biblical Ark of the Covenant."},
+{t:"Django Unchained",y:2012,d:"Quentin Tarantino",g:["Drama","Western"],c:["Jamie Foxx","Christoph Waltz","Leonardo DiCaprio","Kerry Washington"],x:"A freed slave partners with a bounty hunter to rescue his wife from a brutal plantation owner."},
+{t:"WALL\u00b7E",y:2008,d:"Andrew Stanton",g:["Animation","Adventure","Family"],c:["Ben Burtt","Elissa Knight","Jeff Garlin"],x:"A lonely trash-collecting robot on an abandoned Earth falls for a sleek probe from space."},
+{t:"Sunset Boulevard",y:1950,d:"Billy Wilder",g:["Drama","Film-Noir"],c:["William Holden","Gloria Swanson","Erich von Stroheim","Nancy Olson"],x:"A struggling screenwriter becomes entangled with a faded, delusional silent-film star."},
+{t:"Paths of Glory",y:1957,d:"Stanley Kubrick",g:["Drama","War"],c:["Kirk Douglas","Ralph Meeker","Adolphe Menjou"],x:"A French colonel defends soldiers scapegoated for a failed WWI assault ordered by their own generals."},
+{t:"Avengers: Infinity War",y:2018,d:"Anthony &amp; Joe Russo",g:["Action","Adventure","Sci-Fi"],c:["Robert Downey Jr.","Chris Hemsworth","Chris Evans","Josh Brolin"],x:"Earth's heroes unite to stop a cosmic tyrant from collecting all six Infinity Stones."},
+{t:"Princess Mononoke",y:1997,d:"Hayao Miyazaki",g:["Animation","Adventure","Fantasy"],c:["Yoji Matsuda","Yuriko Ishida","Yuko Tanaka"],x:"A cursed prince is drawn into a war between forest spirits and an expanding mining town."},
+{t:"Oldboy",y:2003,d:"Park Chan-wook",g:["Action","Drama","Mystery"],c:["Choi Min-sik","Yoo Ji-tae","Kang Hye-jung"],x:"A man imprisoned without explanation for fifteen years is freed and given five days to find out why."},
+{t:"Witness for the Prosecution",y:1957,d:"Billy Wilder",g:["Crime","Drama","Mystery"],c:["Tyrone Power","Marlene Dietrich","Charles Laughton"],x:"An ailing barrister takes on a murder case where the defendant's own wife may be lying."},
+{t:"Coco",y:2017,d:"Lee Unkrich, Adrian Molina",g:["Animation","Adventure","Family"],c:["Anthony Gonzalez","Ga\u00ebl Garc\u00eda Bernal","Benjamin Bratt"],x:"A boy chasing his forbidden love of music crosses into the Land of the Dead to find his great-great-grandfather."},
+{t:"Come and See",y:1985,d:"Elem Klimov",g:["Drama","War"],c:["Aleksei Kravchenko","Olga Mironova"],x:"A boy joins Belarusian partisans and witnesses the annihilating brutality of Nazi occupation."},
+{t:"Reservoir Dogs",y:1992,d:"Quentin Tarantino",g:["Crime","Drama","Thriller"],c:["Harvey Keitel","Tim Roth","Michael Madsen","Chris Penn"],x:"A jewel heist goes catastrophically wrong, leaving the surviving crooks to suspect one of them is a cop."},
+{t:"Aliens",y:1986,d:"James Cameron",g:["Action","Adventure","Sci-Fi"],c:["Sigourney Weaver","Michael Biehn","Paul Reiser","Lance Henriksen"],x:"Ripley returns to the alien-infested colony with a squad of marines who are badly outmatched."},
+{t:"The Dark Knight Rises",y:2012,d:"Christopher Nolan",g:["Action","Drama"],c:["Christian Bale","Tom Hardy","Anne Hathaway","Gary Oldman"],x:"Eight years after Harvey Dent's death, Batman returns to face the masked revolutionary Bane."},
+{t:"Amadeus",y:1984,d:"Milos Forman",g:["Biography","Drama","Music"],c:["F. Murray Abraham","Tom Hulce","Elizabeth Berridge"],x:"A rival composer, consumed by envy, plots against the young genius Wolfgang Amadeus Mozart."},
+{t:"Dr. Strangelove",y:1964,d:"Stanley Kubrick",g:["Comedy","War"],c:["Peter Sellers","George C. Scott","Sterling Hayden"],x:"A rogue general triggers a nuclear crisis while officials farcically scramble to avert doomsday."},
+{t:"Braveheart",y:1995,d:"Mel Gibson",g:["Biography","Drama","War"],c:["Mel Gibson","Sophie Marceau","Patrick McGoohan"],x:"A Scottish commoner leads a rebellion against English rule after personal tragedy."},
+{t:"2001: A Space Odyssey",y:1968,d:"Stanley Kubrick",g:["Adventure","Sci-Fi"],c:["Keir Dullea","Gary Lockwood","William Sylvester"],x:"A mysterious monolith guides human evolution from prehistory to a fateful mission near Jupiter."},
+{t:"Toy Story",y:1995,d:"John Lasseter",g:["Animation","Adventure","Comedy"],c:["Tom Hanks","Tim Allen","Don Rickles"],x:"A cowboy doll's world is upended when a flashy spaceman toy becomes his owner's new favorite."},
+{t:"Toy Story 3",y:2010,d:"Lee Unkrich",g:["Animation","Adventure","Comedy"],c:["Tom Hanks","Tim Allen","Joan Cusack"],x:"As their owner leaves for college, the toys are donated to a daycare with a dark side."},
+{t:"The Great Dictator",y:1940,d:"Charlie Chaplin",g:["Comedy","Drama","War"],c:["Charlie Chaplin","Paulette Goddard","Jack Oakie"],x:"A Jewish barber is mistaken for a tyrannical dictator he happens to resemble exactly."},
+{t:"Singin' in the Rain",y:1952,d:"Gene Kelly, Stanley Donen",g:["Comedy","Musical","Romance"],c:["Gene Kelly","Donald O'Connor","Debbie Reynolds"],x:"A silent-film star navigates the chaotic, comic transition to talking pictures."},
+{t:"Vertigo",y:1958,d:"Alfred Hitchcock",g:["Mystery","Romance","Thriller"],c:["James Stewart","Kim Novak","Barbara Bel Geddes"],x:"A detective with a fear of heights becomes obsessively entangled in a friend's wife's strange behavior."},
+{t:"M",y:1931,d:"Fritz Lang",g:["Crime","Mystery","Thriller"],c:["Peter Lorre","Ellen Widmann","Otto Wernicke"],x:"Berlin's police and criminal underworld both hunt a child murderer terrorizing the city."},
+{t:"Capernaum",y:2018,d:"Nadine Labaki",g:["Drama"],c:["Zain Al Rafeea","Yordanos Shiferaw"],x:"A boy sues his parents for the crime of giving him life, while surviving alone on the streets of Beirut."},
+{t:"Full Metal Jacket",y:1987,d:"Stanley Kubrick",g:["Drama","War"],c:["Matthew Modine","R. Lee Ermey","Vincent D'Onofrio"],x:"Marine recruits are dehumanized through brutal training before facing the reality of Vietnam."},
+{t:"Am\u00e9lie",y:2001,d:"Jean-Pierre Jeunet",g:["Comedy","Romance"],c:["Audrey Tautou","Mathieu Kassovitz","Rufus"],x:"A shy Parisian waitress secretly orchestrates small acts of kindness in the lives around her."},
+{t:"Up",y:2009,d:"Pete Docter",g:["Animation","Adventure","Comedy"],c:["Edward Asner","Jordan Nagai","Christopher Plummer"],x:"A widowed old man ties thousands of balloons to his house to fulfil a promise to his late wife."},
+{t:"Taxi Driver",y:1976,d:"Martin Scorsese",g:["Crime","Drama"],c:["Robert De Niro","Jodie Foster","Cybill Shepherd"],x:"A alienated, insomniac cab driver descends into vigilante violence on the streets of New York."},
+{t:"Batman Begins",y:2005,d:"Christopher Nolan",g:["Action","Crime","Drama"],c:["Christian Bale","Michael Caine","Liam Neeson","Katie Holmes"],x:"Bruce Wayne trains abroad before returning to Gotham to become a symbol against crime."},
+{t:"Snatch",y:2000,d:"Guy Ritchie",g:["Comedy","Crime"],c:["Jason Statham","Brad Pitt","Benicio del Toro"],x:"A stolen diamond sets off a chaotic collision of boxers, gangsters, and bare-knuckle promoters in London."},
+{t:"My Neighbor Totoro",y:1988,d:"Hayao Miyazaki",g:["Animation","Family","Fantasy"],c:["Hitoshi Takagi","Noriko Hidaka","Chika Sakamoto"],x:"Two sisters befriend gentle forest spirits after moving to the countryside near their ailing mother's hospital."},
+{t:"Eternal Sunshine of the Spotless Mind",y:2004,d:"Michel Gondry",g:["Drama","Romance","Sci-Fi"],c:["Jim Carrey","Kate Winslet","Tom Wilkinson"],x:"A heartbroken man undergoes a procedure to erase all memory of his ex, and comes to regret it mid-process."},
+{t:"Cinema Paradiso",y:1988,d:"Giuseppe Tornatore",g:["Drama","Romance"],c:["Philippe Noiret","Enzo Cannavale","Antonella Attili"],x:"A filmmaker recalls his childhood friendship with a projectionist in postwar Sicily."},
+{t:"Lawrence of Arabia",y:1962,d:"David Lean",g:["Adventure","Biography","Drama"],c:["Peter O'Toole","Alec Guinness","Anthony Quinn"],x:"A British officer unites Arab tribes to fight the Ottoman Empire during WWI."},
+{t:"Double Indemnity",y:1944,d:"Billy Wilder",g:["Crime","Drama","Film-Noir"],c:["Fred MacMurray","Barbara Stanwyck","Edward G. Robinson"],x:"An insurance salesman is drawn into a murder-for-payout scheme by a scheming housewife."},
+{t:"Hacksaw Ridge",y:2016,d:"Mel Gibson",g:["Biography","Drama","History"],c:["Andrew Garfield","Sam Worthington","Luke Bracey"],x:"A conscientious objector serves as an unarmed medic and saves dozens under fire at Okinawa."},
+{t:"Requiem for a Dream",y:2000,d:"Darren Aronofsky",g:["Drama"],c:["Ellen Burstyn","Jared Leto","Jennifer Connelly"],x:"Four New Yorkers' addictions spiral into ruin across one devastating year."},
+{t:"Green Book",y:2018,d:"Peter Farrelly",g:["Biography","Comedy","Drama"],c:["Viggo Mortensen","Mahershala Ali","Linda Cardellini"],x:"A bouncer is hired to drive a Black classical pianist on a concert tour through the segregated South."},
+{t:"Inglourious Basterds",y:2009,d:"Quentin Tarantino",g:["Adventure","Drama","War"],c:["Brad Pitt","Diane Kruger","M\u00e9lanie Laurent"],x:"A Jewish-American squad and a cinema owner separately plot to kill Nazi leadership in occupied France."},
+{t:"All About Eve",y:1950,d:"Joseph L. Mankiewicz",g:["Drama"],c:["Bette Davis","Anne Baxter","George Sanders"],x:"An aging Broadway star takes a devoted young fan under her wing, with treacherous results."},
+{t:"The Shining",y:1980,d:"Stanley Kubrick",g:["Drama","Horror"],c:["Jack Nicholson","Shelley Duvall","Danny Lloyd"],x:"A writer's family is isolated in a haunted hotel for the winter as his sanity unravels."},
+{t:"Incendies",y:2010,d:"Denis Villeneuve",g:["Drama","Mystery","War"],c:["Lubna Azabal","M\u00e9lissa D\u00e9sormeaux-Poulin"],x:"Twins fulfil their late mother's will by uncovering her hidden, violent past in the Middle East."},
+{t:"Rashomon",y:1950,d:"Akira Kurosawa",g:["Crime","Drama","Mystery"],c:["Toshiro Mifune","Machiko Ky\u00f4","Masayuki Mori"],x:"A rape and murder are recounted through four irreconcilable eyewitness versions of events."},
+{t:"For a Few Dollars More",y:1965,d:"Sergio Leone",g:["Western"],c:["Clint Eastwood","Lee Van Cleef","Gian Maria Volont\u00e8"],x:"Two rival bounty hunters reluctantly team up to bring down a sadistic bandit leader."},
+{t:"Downfall",y:2004,d:"Oliver Hirschbiegel",g:["Biography","Drama","History"],c:["Bruno Ganz","Alexandra Maria Lara","Ulrich Matthes"],x:"Hitler's final days are seen through the eyes of his secretary inside the collapsing Berlin bunker."},
+{t:"Yojimbo",y:1961,d:"Akira Kurosawa",g:["Action","Drama","Thriller"],c:["Toshiro Mifune","Eijir\u00f4 T\u00f4no","Tatsuya Nakadai"],x:"A wandering ronin plays two rival gangs against each other in a corrupt town."},
+{t:"The Great Escape",y:1963,d:"John Sturges",g:["Adventure","Drama","History"],c:["Steve McQueen","James Garner","Richard Attenborough"],x:"Allied POWs mastermind an elaborate mass breakout from a heavily guarded German camp."},
+{t:"Chinatown",y:1974,d:"Roman Polanski",g:["Drama","Mystery","Thriller"],c:["Jack Nicholson","Faye Dunaway","John Huston"],x:"A private detective's investigation into infidelity uncovers a vast conspiracy over Los Angeles's water supply."},
+{t:"The Sting",y:1973,d:"George Roy Hill",g:["Comedy","Crime","Drama"],c:["Paul Newman","Robert Redford","Robert Shaw"],x:"Two con artists run an elaborate long game to take down a ruthless crime boss."},
+{t:"The Wolf of Wall Street",y:2013,d:"Martin Scorsese",g:["Biography","Comedy","Crime"],c:["Leonardo DiCaprio","Jonah Hill","Margot Robbie"],x:"A stockbroker's fraudulent empire of excess collapses under its own greed."},
+{t:"Monty Python and the Holy Grail",y:1975,d:"Terry Gilliam, Terry Jones",g:["Adventure","Comedy","Fantasy"],c:["Graham Chapman","John Cleese","Eric Idle"],x:"King Arthur and his knights bumble through an absurdist quest for the Holy Grail."},
+{t:"The Hunt",y:2012,d:"Thomas Vinterberg",g:["Drama"],c:["Mads Mikkelsen","Thomas Bo Larsen","Annika Wedderkopp"],x:"A kindergarten teacher's life is destroyed after a small child's false accusation spreads through his town."},
+{t:"Klaus",y:2019,d:"Sergio Pablos",g:["Animation","Adventure","Comedy"],c:["Jason Schwartzman","J.K. Simmons","Rashida Jones"],x:"A spoiled postman exiled to a feuding arctic town accidentally builds a Christmas legend."},
+{t:"Bicycle Thieves",y:1948,d:"Vittorio De Sica",g:["Drama"],c:["Lamberto Maggiorani","Enzo Staiola"],x:"A poor father and his son scour postwar Rome for the stolen bicycle he needs to keep his job."},
+{t:"American Beauty",y:1999,d:"Sam Mendes",g:["Drama"],c:["Kevin Spacey","Annette Bening","Thora Birch"],x:"A suburban father's midlife crisis unravels his family's carefully maintained facade."},
+{t:"Unforgiven",y:1992,d:"Clint Eastwood",g:["Drama","Western"],c:["Clint Eastwood","Gene Hackman","Morgan Freeman"],x:"A retired, aging gunslinger takes one last bounty job and confronts the cost of his violent past."},
+{t:"The Elephant Man",y:1980,d:"David Lynch",g:["Biography","Drama"],c:["Anthony Hopkins","John Hurt","Anne Bancroft"],x:"A Victorian surgeon rescues a severely disfigured man from a freak show and gives him dignity."},
+{t:"Indiana Jones and the Last Crusade",y:1989,d:"Steven Spielberg",g:["Action","Adventure"],c:["Harrison Ford","Sean Connery","Alison Doody"],x:"Indiana Jones and his father race Nazis across Europe to find the Holy Grail."},
+{t:"On the Waterfront",y:1954,d:"Elia Kazan",g:["Crime","Drama"],c:["Marlon Brando","Karl Malden","Lee J. Cobb"],x:"A former boxer turned dockworker struggles against corrupt union bosses controlling his pier."},
+{t:"Judgment at Nuremberg",y:1961,d:"Stanley Kramer",g:["Drama","War"],c:["Spencer Tracy","Burt Lancaster","Richard Widmark"],x:"American judges preside over the postwar trial of German judges complicit with the Nazi regime."},
+{t:"Scarface",y:1983,d:"Brian De Palma",g:["Crime","Drama"],c:["Al Pacino","Michelle Pfeiffer","Steven Bauer"],x:"A Cuban refugee claws his way to the top of Miami's cocaine trade, and just as fast, falls."},
+{t:"North by Northwest",y:1959,d:"Alfred Hitchcock",g:["Adventure","Mystery","Thriller"],c:["Cary Grant","Eva Marie Saint","James Mason"],x:"An advertising executive is mistaken for a spy and pursued across the country by hostile agents."},
+{t:"Jaws",y:1975,d:"Steven Spielberg",g:["Adventure","Drama","Thriller"],c:["Roy Scheider","Robert Shaw","Richard Dreyfuss"],x:"A police chief, a scientist, and a grizzled fisherman hunt a great white shark terrorizing a resort town."},
+{t:"The Truman Show",y:1998,d:"Peter Weir",g:["Comedy","Drama","Sci-Fi"],c:["Jim Carrey","Ed Harris","Laura Linney"],x:"A man slowly realizes his entire life has been staged as a nonstop television show."},
+{t:"Blade Runner",y:1982,d:"Ridley Scott",g:["Sci-Fi","Thriller"],c:["Harrison Ford","Rutger Hauer","Sean Young"],x:"A retired blade runner is pulled back in to hunt down rogue bioengineered replicants."},
+{t:"Blade Runner 2049",y:2017,d:"Denis Villeneuve",g:["Sci-Fi","Thriller"],c:["Ryan Gosling","Harrison Ford","Ana de Armas"],x:"A new blade runner's discovery threatens to unravel the fragile order of a fractured society."},
+{t:"Die Hard",y:1988,d:"John McTiernan",g:["Action","Thriller"],c:["Bruce Willis","Alan Rickman","Bonnie Bedelia"],x:"An off-duty cop battles terrorists who have seized a Los Angeles high-rise during a Christmas party."},
+{t:"The Big Lebowski",y:1998,d:"Joel &amp; Ethan Coen",g:["Comedy","Crime"],c:["Jeff Bridges","John Goodman","Julianne Moore"],x:"A case of mistaken identity drags a laid-back bowler into a bizarre kidnapping scheme."},
+{t:"No Country for Old Men",y:2007,d:"Joel &amp; Ethan Coen",g:["Crime","Drama","Thriller"],c:["Tommy Lee Jones","Javier Bardem","Josh Brolin"],x:"A hunter who stumbles onto drug money is relentlessly pursued by an unstoppable killer."},
+{t:"There Will Be Blood",y:2007,d:"Paul Thomas Anderson",g:["Drama"],c:["Daniel Day-Lewis","Paul Dano","Ciar\u00e1n Hinds"],x:"A ruthless oil prospector's ambition consumes his relationships and his humanity."},
+{t:"A Clockwork Orange",y:1971,d:"Stanley Kubrick",g:["Crime","Drama","Sci-Fi"],c:["Malcolm McDowell","Patrick Magee","Michael Bates"],x:"A violent delinquent undergoes controversial aversion therapy meant to strip him of free will."},
+{t:"Metropolis",y:1927,d:"Fritz Lang",g:["Drama","Sci-Fi"],c:["Brigitte Helm","Alfred Abel","Gustav Fr\u00f6hlich"],x:"In a divided future city, a wealthy son falls for a worker's daughter amid class rebellion."},
+{t:"Trainspotting",y:1996,d:"Danny Boyle",g:["Drama"],c:["Ewan McGregor","Ewen Bremner","Jonny Lee Miller"],x:"A group of Edinburgh heroin addicts cycle through highs, betrayals, and attempts to get clean."},
+{t:"Good Will Hunting",y:1997,d:"Gus Van Sant",g:["Drama","Romance"],c:["Robin Williams","Matt Damon","Ben Affleck"],x:"A janitor with a genius for mathematics is pushed by a therapist to confront his troubled past."},
+{t:"A Beautiful Mind",y:2001,d:"Ron Howard",g:["Biography","Drama"],c:["Russell Crowe","Ed Harris","Jennifer Connelly"],x:"A brilliant mathematician's groundbreaking career is shadowed by worsening schizophrenia."},
+{t:"The Sixth Sense",y:1999,d:"M. Night Shyamalan",g:["Drama","Mystery","Thriller"],c:["Bruce Willis","Haley Joel Osment","Toni Collette"],x:"A child psychologist tries to help a boy who claims he can see dead people."},
+{t:"Gone with the Wind",y:1939,d:"Victor Fleming",g:["Drama","Romance","War"],c:["Clark Gable","Vivien Leigh","Thomas Mitchell"],x:"A headstrong Southern belle's fortunes and love life are upended by the Civil War."},
+{t:"The Wizard of Oz",y:1939,d:"Victor Fleming",g:["Adventure","Family","Fantasy"],c:["Judy Garland","Frank Morgan","Ray Bolger"],x:"A Kansas farm girl is swept to a magical land and follows a yellow road home."},
+{t:"It Happened One Night",y:1934,d:"Frank Capra",g:["Comedy","Romance"],c:["Clark Gable","Claudette Colbert","Walter Connolly"],x:"A runaway heiress and a wisecracking reporter fall for each other on a cross-country bus trip."},
+{t:"Some Like It Hot",y:1959,d:"Billy Wilder",g:["Comedy","Music","Romance"],c:["Marilyn Monroe","Tony Curtis","Jack Lemmon"],x:"Two musicians disguise themselves as women to hide from the mob inside an all-female band."},
+{t:"Network",y:1976,d:"Sidney Lumet",g:["Drama"],c:["Faye Dunaway","William Holden","Peter Finch"],x:"A washed-up news anchor's on-air breakdown is exploited by a network chasing ratings."},
+{t:"Annie Hall",y:1977,d:"Woody Allen",g:["Comedy","Romance"],c:["Woody Allen","Diane Keaton","Tony Roberts"],x:"A neurotic comedian reflects on the rise and collapse of his relationship with an aspiring singer."},
+{t:"Raging Bull",y:1980,d:"Martin Scorsese",g:["Biography","Drama","Sport"],c:["Robert De Niro","Cathy Moriarty","Joe Pesci"],x:"A talented but self-destructive boxer's jealousy and rage ruin his career and marriage."},
+{t:"The Deer Hunter",y:1978,d:"Michael Cimino",g:["Drama","War"],c:["Robert De Niro","Christopher Walken","John Cazale","Meryl Streep"],x:"Three steelworker friends are irrevocably changed by their captivity during the Vietnam War."},
+{t:"Platoon",y:1986,d:"Oliver Stone",g:["Drama","War"],c:["Tom Berenger","Willem Dafoe","Charlie Sheen"],x:"A young infantryman in Vietnam is caught between two sergeants representing good and evil."},
+{t:"Fargo",y:1996,d:"Joel &amp; Ethan Coen",g:["Crime","Drama","Thriller"],c:["William H. Macy","Frances McDormand","Steve Buscemi"],x:"A car salesman's staged kidnapping scheme spirals into a string of murders in the Minnesota snow."},
+{t:"L.A. Confidential",y:1997,d:"Curtis Hanson",g:["Crime","Drama","Mystery"],c:["Kevin Spacey","Russell Crowe","Guy Pearce"],x:"Three LAPD detectives uncover corruption while investigating a coffee-shop massacre."},
+{t:"Heat",y:1995,d:"Michael Mann",g:["Action","Crime","Drama"],c:["Al Pacino","Robert De Niro","Val Kilmer"],x:"An elite crew of thieves and the detective hunting them circle each other across Los Angeles."},
+{t:"Casino",y:1995,d:"Martin Scorsese",g:["Crime","Drama"],c:["Robert De Niro","Sharon Stone","Joe Pesci"],x:"A mob-connected casino boss's empire crumbles amid greed, betrayal, and his wife's addiction."},
+{t:"The Hustler",y:1961,d:"Robert Rossen",g:["Drama","Sport"],c:["Paul Newman","Jackie Gleason","Piper Laurie"],x:"An ambitious pool hustler risks everything to beat the legendary Minnesota Fats."},
+{t:"Rocky",y:1976,d:"John G. Avildsen",g:["Drama","Sport"],c:["Sylvester Stallone","Talia Shire","Burt Young"],x:"A small-time Philadelphia boxer gets a once-in-a-lifetime shot at the heavyweight title."},
+{t:"Munich",y:2005,d:"Steven Spielberg",g:["Drama","History","Thriller"],c:["Eric Bana","Daniel Craig","Ciar\u00e1n Hinds"],x:"A Mossad team is tasked with hunting down those responsible for the 1972 Olympics massacre."},
+{t:"Ben-Hur",y:1959,d:"William Wyler",g:["Adventure","Drama","History"],c:["Charlton Heston","Jack Hawkins","Stephen Boyd"],x:"A betrayed Jewish prince is enslaved by a childhood friend and seeks revenge across the Roman Empire."},
+{t:"Ford v Ferrari",y:2019,d:"James Mangold",g:["Action","Biography","Drama"],c:["Matt Damon","Christian Bale","Jon Bernthal"],x:"An engineer and a fearless driver build a car to beat Ferrari at Le Mans."},
+{t:"Prisoners",y:2013,d:"Denis Villeneuve",g:["Crime","Drama","Mystery"],c:["Hugh Jackman","Jake Gyllenhaal","Viola Davis"],x:"A father takes matters into his own hands when police can't find his abducted daughter fast enough."},
+{t:"Arrival",y:2016,d:"Denis Villeneuve",g:["Drama","Sci-Fi"],c:["Amy Adams","Jeremy Renner","Forest Whitaker"],x:"A linguist is recruited to communicate with mysterious alien visitors before global panic turns to war."},
+{t:"Dune",y:2021,d:"Denis Villeneuve",g:["Action","Adventure","Drama"],c:["Timoth\u00e9e Chalamet","Rebecca Ferguson","Oscar Isaac"],x:"A young noble's family is betrayed on a desert planet that holds the galaxy's most valuable resource."},
+{t:"Gone Girl",y:2014,d:"David Fincher",g:["Drama","Mystery","Thriller"],c:["Ben Affleck","Rosamund Pike","Neil Patrick Harris"],x:"A husband becomes the prime suspect when his wife vanishes on their anniversary."},
+{t:"Zodiac",y:2007,d:"David Fincher",g:["Crime","Drama","Mystery"],c:["Jake Gyllenhaal","Robert Downey Jr.","Mark Ruffalo"],x:"A cartoonist becomes obsessed with identifying the uncaught Zodiac killer terrorizing the Bay Area."},
+{t:"The Social Network",y:2010,d:"David Fincher",g:["Biography","Drama"],c:["Jesse Eisenberg","Andrew Garfield","Justin Timberlake"],x:"A Harvard student's creation of Facebook fractures the friendships that helped build it."},
+{t:"Get Out",y:2017,d:"Jordan Peele",g:["Horror","Mystery","Thriller"],c:["Daniel Kaluuya","Allison Williams","Bradley Whitford"],x:"A Black man visiting his white girlfriend's family estate uncovers a horrifying secret."},
+{t:"Joker",y:2019,d:"Todd Phillips",g:["Crime","Drama","Thriller"],c:["Joaquin Phoenix","Robert De Niro","Zazie Beetz"],x:"A failed clown and comedian's mental collapse in a decaying Gotham gives rise to a symbol of chaos."},
+{t:"1917",y:2019,d:"Sam Mendes",g:["Drama","War"],c:["George MacKay","Dean-Charles Chapman","Mark Strong"],x:"Two British soldiers race across enemy territory to deliver a message that could save 1,600 men."},
+{t:"Roma",y:2018,d:"Alfonso Cuar\u00f3n",g:["Drama"],c:["Yalitza Aparicio","Marina de Tavira"],x:"A live-in housekeeper anchors a middle-class Mexico City family through a turbulent year."},
+{t:"Children of Men",y:2006,d:"Alfonso Cuar\u00f3n",g:["Drama","Sci-Fi","Thriller"],c:["Clive Owen","Julianne Moore","Michael Caine"],x:"In a world where humans have become infertile, a man must escort the first pregnant woman in decades to safety."},
+{t:"Gravity",y:2013,d:"Alfonso Cuar\u00f3n",g:["Drama","Sci-Fi","Thriller"],c:["Sandra Bullock","George Clooney"],x:"Two astronauts fight to survive after debris destroys their shuttle, leaving them stranded in orbit."},
+{t:"Mad Max: Fury Road",y:2015,d:"George Miller",g:["Action","Adventure","Sci-Fi"],c:["Tom Hardy","Charlize Theron","Nicholas Hoult"],x:"A rebel warrior and a wandering drifter flee a tyrant across the wasteland with his captive brides."},
+{t:"Kill Bill: Vol. 1",y:2003,d:"Quentin Tarantino",g:["Action","Crime","Drama"],c:["Uma Thurman","David Carradine","Daryl Hannah"],x:"A former assassin left for dead wakes from a coma and sets out for bloody revenge."},
+{t:"Kill Bill: Vol. 2",y:2004,d:"Quentin Tarantino",g:["Action","Crime","Drama"],c:["Uma Thurman","David Carradine","Michael Madsen"],x:"The Bride closes in on the last names on her revenge list, including Bill himself."},
+{t:"Jackie Brown",y:1997,d:"Quentin Tarantino",g:["Crime","Drama","Thriller"],c:["Pam Grier","Samuel L. Jackson","Robert Forster"],x:"A flight attendant caught smuggling cash plots to outwit both the ATF and a gunrunner."},
+{t:"Bringing Up Baby",y:1938,d:"Howard Hawks",g:["Comedy","Romance"],c:["Katharine Hepburn","Cary Grant","Charles Ruggles"],x:"A scatterbrained heiress and her pet leopard turn a paleontologist's orderly life upside down."},
+{t:"The Philadelphia Story",y:1940,d:"George Cukor",g:["Comedy","Romance"],c:["Cary Grant","Katharine Hepburn","James Stewart"],x:"A socialite's remarriage is complicated by her ex-husband and a charming tabloid reporter, both on the eve of her wedding."},
+{t:"Roman Holiday",y:1953,d:"William Wyler",g:["Comedy","Romance"],c:["Gregory Peck","Audrey Hepburn","Eddie Albert"],x:"A runaway princess spends a secret, carefree day in Rome with an American reporter."},
+{t:"Breakfast at Tiffany's",y:1961,d:"Blake Edwards",g:["Comedy","Drama","Romance"],c:["Audrey Hepburn","George Peppard","Patricia Neal"],x:"A free-spirited New York socialite forms an unexpected bond with the struggling writer next door."},
+{t:"West Side Story",y:1961,d:"Robert Wise, Jerome Robbins",g:["Crime","Drama","Musical"],c:["Natalie Wood","Richard Beymer","Rita Moreno"],x:"Rival gangs clash on the streets of New York as two young lovers try to defy the divide."},
+{t:"My Fair Lady",y:1964,d:"George Cukor",g:["Drama","Family","Musical"],c:["Audrey Hepburn","Rex Harrison","Stanley Holloway"],x:"A phonetics professor bets he can transform a Cockney flower girl into a proper lady."},
+{t:"The Sound of Music",y:1965,d:"Robert Wise",g:["Biography","Drama","Family"],c:["Julie Andrews","Christopher Plummer","Eleanor Parker"],x:"A free-spirited governess wins over a widowed naval captain's seven children as Austria falls to the Nazis."},
+{t:"Cabaret",y:1972,d:"Bob Fosse",g:["Drama","Musical"],c:["Liza Minnelli","Michael York","Joel Grey"],x:"A nightclub singer's decadent Berlin life collides with the rising shadow of the Nazi party."},
+{t:"La La Land",y:2016,d:"Damien Chazelle",g:["Comedy","Drama","Music"],c:["Ryan Gosling","Emma Stone","J.K. Simmons"],x:"A jazz pianist and an aspiring actress fall in love while chasing conflicting dreams in Los Angeles."},
+{t:"Everything Everywhere All at Once",y:2022,d:"Daniel Kwan, Daniel Scheinert",g:["Action","Adventure","Comedy"],c:["Michelle Yeoh","Stephanie Hsu","Ke Huy Quan"],x:"A laundromat owner discovers she must connect with parallel versions of herself to save the multiverse."},
+{t:"Oppenheimer",y:2023,d:"Christopher Nolan",g:["Biography","Drama","History"],c:["Cillian Murphy","Emily Blunt","Matt Damon"],x:"The physicist who led the creation of the atomic bomb is later consumed by its political fallout."},
+{t:"Barbie",y:2023,d:"Greta Gerwig",g:["Adventure","Comedy","Fantasy"],c:["Margot Robbie","Ryan Gosling","America Ferrera"],x:"A doll living in idealized Barbieland ventures into the real world and confronts unexpected truths."},
+{t:"Dune: Part Two",y:2024,d:"Denis Villeneuve",g:["Action","Adventure","Drama"],c:["Timoth\u00e9e Chalamet","Zendaya","Rebecca Ferguson"],x:"Paul Atreides unites with the Fremen for revenge against the conspirators who destroyed his family."},
+{t:"Poor Things",y:2023,d:"Yorgos Lanthimos",g:["Comedy","Drama","Romance"],c:["Emma Stone","Mark Ruffalo","Willem Dafoe"],x:"A reanimated Victorian woman escapes her sheltered creator to discover the world, and herself, on her own terms."},
+{t:"The Zone of Interest",y:2023,d:"Jonathan Glazer",g:["Drama","History","War"],c:["Christian Friedel","Sandra H\u00fcller"],x:"A commandant and his wife build an idyllic home life directly alongside the Auschwitz camp wall."},
+{t:"Anatomy of a Fall",y:2023,d:"Justine Triet",g:["Crime","Drama","Mystery"],c:["Sandra H\u00fcller","Swann Arlaud"],x:"A writer stands trial for her husband's death as their blind son becomes the case's key witness."},
+{t:"Past Lives",y:2023,d:"Celine Song",g:["Drama","Romance"],c:["Greta Lee","Teo Yoo","John Magaro"],x:"Childhood sweethearts separated by emigration reconnect decades later, each now married to someone else."},
+{t:"Killers of the Flower Moon",y:2023,d:"Martin Scorsese",g:["Crime","Drama","History"],c:["Leonardo DiCaprio","Robert De Niro","Lily Gladstone"],x:"A string of murders targeting oil-wealthy Osage families exposes a conspiracy reaching into one family's own home."},
+{t:"The Batman",y:2022,d:"Matt Reeves",g:["Action","Crime","Drama"],c:["Robert Pattinson","Zo\u00eb Kravitz","Paul Dano"],x:"A young, isolated Batman investigates a serial killer targeting Gotham's corrupt elite."},
+{t:"Top Gun: Maverick",y:2022,d:"Joseph Kosinski",g:["Action","Drama"],c:["Tom Cruise","Miles Teller","Jennifer Connelly"],x:"A veteran fighter pilot is called back to train a new generation for a near-impossible mission."},
+{t:"Spider-Man: Across the Spider-Verse",y:2023,d:"Joaquim Dos Santos, Kemp Powers, Justin K. Thompson",g:["Animation","Action","Adventure"],c:["Shameik Moore","Hailee Steinfeld","Brian Tyree Henry"],x:"Miles Morales journeys across a multiverse of Spider-people and clashes with them over fate itself."},
+{t:"Spider-Man: Into the Spider-Verse",y:2018,d:"Bob Persichetti, Peter Ramsey, Rodney Rothman",g:["Animation","Action","Adventure"],c:["Shameik Moore","Jake Johnson","Hailee Steinfeld"],x:"A Brooklyn teenager becomes his universe's Spider-Man and teams up with counterparts from other dimensions."},
+{t:"Avengers: Endgame",y:2019,d:"Anthony &amp; Joe Russo",g:["Action","Adventure","Drama"],c:["Robert Downey Jr.","Chris Evans","Mark Ruffalo"],x:"The surviving Avengers attempt a desperate time heist to undo a universe-altering catastrophe."},
+{t:"Logan",y:2017,d:"James Mangold",g:["Action","Drama","Sci-Fi"],c:["Hugh Jackman","Patrick Stewart","Dafne Keen"],x:"An aging, weary Wolverine protects a young mutant girl while caring for a failing Professor X."},
+{t:"Guardians of the Galaxy",y:2014,d:"James Gunn",g:["Action","Adventure","Comedy"],c:["Chris Pratt","Zoe Salda\u00f1a","Dave Bautista"],x:"A ragtag crew of misfits and criminals band together to stop a fanatic from destroying a planet."},
+{t:"Deadpool",y:2016,d:"Tim Miller",g:["Action","Adventure","Comedy"],c:["Ryan Reynolds","Morena Baccarin","Ed Skrein"],x:"A disfigured mercenary with accelerated healing hunts the man who ruined his face, breaking the fourth wall along the way."},
+{t:"Iron Man",y:2008,d:"Jon Favreau",g:["Action","Adventure","Sci-Fi"],c:["Robert Downey Jr.","Terrence Howard","Jeff Bridges"],x:"A captured weapons manufacturer builds a powered suit and turns against his own industry."},
+{t:"V for Vendetta",y:2005,d:"James McTeigue",g:["Action","Drama","Sci-Fi"],c:["Hugo Weaving","Natalie Portman","Stephen Rea"],x:"A masked vigilante wages a one-man war against a fascist British government."},
+{t:"Donnie Darko",y:2001,d:"Richard Kelly",g:["Drama","Mystery","Sci-Fi"],c:["Jake Gyllenhaal","Jena Malone","Patrick Swayze"],x:"A troubled teenager is visited by a menacing figure in a rabbit suit warning of the world's end."},
+{t:"Pan's Labyrinth",y:2006,d:"Guillermo del Toro",g:["Drama","Fantasy","War"],c:["Ivana Baquero","Ariadna Gil","Sergi L\u00f3pez"],x:"A young girl escapes her brutal stepfather's fascist Spain into a dark fairy-tale underworld."},
+{t:"The Shape of Water",y:2017,d:"Guillermo del Toro",g:["Drama","Fantasy","Romance"],c:["Sally Hawkins","Michael Shannon","Richard Jenkins"],x:"A mute cleaning woman at a secret lab falls for a captive amphibious creature."},
+{t:"Nightcrawler",y:2014,d:"Dan Gilroy",g:["Crime","Drama","Thriller"],c:["Jake Gyllenhaal","Rene Russo","Riz Ahmed"],x:"A hungry drifter builds a career filming gruesome crime footage for local news, blurring every ethical line."},
+{t:"Drive",y:2011,d:"Nicolas Winding Refn",g:["Crime","Drama"],c:["Ryan Gosling","Carey Mulligan","Bryan Cranston"],x:"A Hollywood stunt driver moonlighting as a getaway wheelman is pulled into a deadly heist gone wrong."},
+{t:"The Grand Budapest Hotel",y:2014,d:"Wes Anderson",g:["Adventure","Comedy","Crime"],c:["Ralph Fiennes","Tony Revolori","F. Murray Abraham"],x:"A legendary concierge and his young protege become embroiled in a stolen painting and a family feud."},
+{t:"Moonrise Kingdom",y:2012,d:"Wes Anderson",g:["Comedy","Drama","Romance"],c:["Jared Gilman","Kara Hayward","Bruce Willis"],x:"Two twelve-year-olds run away together, prompting a whimsical island-wide search."},
+{t:"The Royal Tenenbaums",y:2001,d:"Wes Anderson",g:["Comedy","Drama"],c:["Gene Hackman","Anjelica Huston","Ben Stiller"],x:"A dysfunctional family of former child prodigies reunites when their estranged father claims he's dying."},
+{t:"Her",y:2013,d:"Spike Jonze",g:["Drama","Romance","Sci-Fi"],c:["Joaquin Phoenix","Amy Adams","Scarlett Johansson"],x:"A lonely writer falls in love with an intelligent operating system designed to meet his every need."},
+{t:"Lost in Translation",y:2003,d:"Sofia Coppola",g:["Comedy","Drama","Romance"],c:["Bill Murray","Scarlett Johansson","Giovanni Ribisi"],x:"A fading actor and a neglected young wife form a wistful bond during sleepless nights in Tokyo."},
+{t:"Before Sunrise",y:1995,d:"Richard Linklater",g:["Drama","Romance"],c:["Ethan Hawke","Julie Delpy"],x:"Two strangers meet on a train and spend one unforgettable night walking and talking through Vienna."},
+{t:"Before Sunset",y:2004,d:"Richard Linklater",g:["Drama","Romance"],c:["Ethan Hawke","Julie Delpy"],x:"Nine years later, the pair reunite in Paris for one afternoon that reopens everything unresolved."},
+{t:"Boyhood",y:2014,d:"Richard Linklater",g:["Drama"],c:["Ellar Coltrane","Patricia Arquette","Ethan Hawke"],x:"A boy's life is filmed over twelve real years, following him from age six into adulthood."},
+{t:"Moonlight",y:2016,d:"Barry Jenkins",g:["Drama"],c:["Mahershala Ali","Naomie Harris","Trevante Rhodes"],x:"A young Black man's identity and sexuality are traced across three defining chapters of his life in Miami."},
+{t:"12 Years a Slave",y:2013,d:"Steve McQueen",g:["Biography","Drama","History"],c:["Chiwetel Ejiofor","Michael Fassbender","Lupita Nyong'o"],x:"A free Black man is kidnapped and sold into slavery in the pre-Civil War South."},
+{t:"Slumdog Millionaire",y:2008,d:"Danny Boyle",g:["Drama","Romance"],c:["Dev Patel","Freida Pinto","Anil Kapoor"],x:"A Mumbai slum orphan's game-show success reveals how each answer connects to his hard life."},
+{t:"The King's Speech",y:2010,d:"Tom Hooper",g:["Biography","Drama","History"],c:["Colin Firth","Geoffrey Rush","Helena Bonham Carter"],x:"A reluctant King George VI works with an unconventional speech therapist ahead of wartime broadcasts."},
+{t:"Argo",y:2012,d:"Ben Affleck",g:["Biography","Drama","Thriller"],c:["Ben Affleck","Bryan Cranston","John Goodman"],x:"A CIA operative stages a fake film production to smuggle six Americans out of revolutionary Iran."},
+{t:"Spotlight",y:2015,d:"Tom McCarthy",g:["Biography","Crime","Drama"],c:["Mark Ruffalo","Michael Keaton","Rachel McAdams"],x:"Boston Globe journalists uncover the Catholic Church's systemic cover-up of child abuse."},
+{t:"A Separation",y:2011,d:"Asghar Farhadi",g:["Drama"],c:["Payman Maadi","Leila Hatami","Sareh Bayat"],x:"A couple's divorce entangles a caregiver in a moral dispute that spirals into a criminal case."},
+{t:"The Handmaiden",y:2016,d:"Park Chan-wook",g:["Drama","Romance","Thriller"],c:["Kim Min-hee","Kim Tae-ri","Ha Jung-woo"],x:"A pickpocket infiltrates a wealthy heiress's household as part of an elaborate con, and falls for her instead."},
+{t:"Memories of Murder",y:2003,d:"Bong Joon Ho",g:["Crime","Drama","Mystery"],c:["Song Kang-ho","Kim Sang-kyung"],x:"Small-town detectives are stretched past their limits hunting Korea's first known serial killer."},
+{t:"Train to Busan",y:2016,d:"Yeon Sang-ho",g:["Action","Horror","Thriller"],c:["Gong Yoo","Ma Dong-seok","Kim Su-an"],x:"Passengers aboard a speeding train fight to survive as a zombie outbreak spreads car by car."},
+{t:"Your Name",y:2016,d:"Makoto Shinkai",g:["Animation","Drama","Fantasy"],c:["Ry\u00fbnosuke Kamiki","Mone Kamishiraishi"],x:"Two teenagers mysteriously swap bodies and fall for each other across a gap of both distance and time."},
+{t:"Akira",y:1988,d:"Katsuhiro Otomo",g:["Animation","Action","Sci-Fi"],c:["Mitsuo Iwata","Nozomu Sasaki"],x:"A biker gang member's psychic powers spiral out of control in a decaying neo-Tokyo."},
+{t:"Perfect Blue",y:1997,d:"Satoshi Kon",g:["Animation","Drama","Horror"],c:["Junko Iwao","Rica Matsumoto"],x:"A retired pop idol's grip on reality frays as a stalker blurs the line between her old and new life."},
+{t:"Howl's Moving Castle",y:2004,d:"Hayao Miyazaki",g:["Animation","Adventure","Family"],c:["Chieko Baish\u00f4","Takuya Kimura"],x:"A young woman cursed into an old body seeks refuge in a wizard's walking castle."},
+{t:"Ratatouille",y:2007,d:"Brad Bird, Jan Pinkava",g:["Animation","Adventure","Comedy"],c:["Patton Oswalt","Ian Holm","Lou Romano"],x:"A rat with a gift for cooking secretly guides a hapless kitchen worker in a Parisian restaurant."},
+{t:"Finding Nemo",y:2003,d:"Andrew Stanton",g:["Animation","Adventure","Comedy"],c:["Albert Brooks","Ellen DeGeneres","Alexander Gould"],x:"An anxious clownfish crosses the ocean to rescue his son, aided by a forgetful blue tang."},
+{t:"Inside Out",y:2015,d:"Pete Docter",g:["Animation","Adventure","Comedy"],c:["Amy Poehler","Bill Hader","Lewis Black"],x:"Personified emotions inside a young girl's mind scramble to cope after a difficult move."},
+{t:"How to Train Your Dragon",y:2010,d:"Dean DeBlois, Chris Sanders",g:["Animation","Action","Adventure"],c:["Jay Baruchel","Gerard Butler","America Ferrera"],x:"A young Viking befriends the dragon he was raised to kill, upending his village's oldest feud."},
+{t:"The Incredibles",y:2004,d:"Brad Bird",g:["Animation","Action","Adventure"],c:["Craig T. Nelson","Holly Hunter","Samuel L. Jackson"],x:"A family of retired superheroes is forced back into action by a vengeful former fan."},
+{t:"Shrek",y:2001,d:"Andrew Adamson, Vicky Jenson",g:["Animation","Adventure","Comedy"],c:["Mike Myers","Eddie Murphy","Cameron Diaz"],x:"A grumpy ogre reluctantly rescues a princess to reclaim his swamp from an overcrowding of fairy-tale exiles."},
+{t:"Persepolis",y:2007,d:"Vincent Paronnaud, Marjane Satrapi",g:["Animation","Biography","Drama"],c:["Chiara Mastroianni","Catherine Deneuve"],x:"A girl comes of age in Iran during the revolution, then abroad, torn between two worlds."},
+{t:"Wallace &amp; Gromit: The Curse of the Were-Rabbit",y:2005,d:"Steve Box, Nick Park",g:["Animation","Adventure","Comedy"],c:["Peter Sallis","Ralph Fiennes","Helena Bonham Carter"],x:"An inventor and his dog investigate a monstrous rabbit terrorizing the village's giant-vegetable contest."},
+{t:"The Iron Giant",y:1999,d:"Brad Bird",g:["Animation","Action","Adventure"],c:["Eli Marienthal","Harry Connick Jr.","Jennifer Aniston"],x:"A boy befriends a colossal robot from space and tries to hide it from a paranoid government agent."},
+{t:"Fantastic Mr. Fox",y:2009,d:"Wes Anderson",g:["Animation","Adventure","Comedy"],c:["George Clooney","Meryl Streep","Jason Schwartzman"],x:"A reformed chicken thief's one last heist against three farmers endangers his whole animal community."},
+{t:"A Silent Voice",y:2016,d:"Naoko Yamada",g:["Animation","Drama","Family"],c:["Miyu Irino","Saori Hayami"],x:"A former bully seeks redemption years after driving a deaf classmate out of school."},
+{t:"Nausica\u00e4 of the Valley of the Wind",y:1984,d:"Hayao Miyazaki",g:["Animation","Adventure","Fantasy"],c:["Sumi Shimamoto","Y\u00f4ji Matsuda"],x:"A princess tries to broker peace between warring kingdoms and a toxic, insect-filled wasteland."},
+{t:"Ikiru",y:1952,d:"Akira Kurosawa",g:["Drama"],c:["Takashi Shimura","Shinichi Himori"],x:"A dying bureaucrat, having wasted his life on paperwork, resolves to accomplish one meaningful thing."},
+{t:"High and Low",y:1963,d:"Akira Kurosawa",g:["Crime","Drama","Mystery"],c:["Toshiro Mifune","Tatsuya Nakadai","Ky\u00f4ko Kagawa"],x:"A wealthy executive must decide whether to pay a ransom for a kidnapped child who isn't his own."},
+{t:"Throne of Blood",y:1957,d:"Akira Kurosawa",g:["Drama","War"],c:["Toshiro Mifune","Isuzu Yamada","Takashi Shimura"],x:"A feudal Japanese retelling of Macbeth, as ambition and prophecy drive a general to ruin."},
+{t:"Stalker",y:1979,d:"Andrei Tarkovsky",g:["Drama","Mystery","Sci-Fi"],c:["Alisa Freindlich","Aleksandr Kaidanovsky"],x:"A guide leads two men through a mysterious forbidden Zone said to grant one's deepest wish."},
+{t:"The Seventh Seal",y:1957,d:"Ingmar Bergman",g:["Drama","Fantasy"],c:["Max von Sydow","Gunnar Bj\u00f6rnstrand","Bengt Ekerot"],x:"A disillusioned knight returning from the Crusades plays chess with Death itself to buy more time."},
+{t:"Wild Strawberries",y:1957,d:"Ingmar Bergman",g:["Drama"],c:["Victor Sj\u00f6str\u00f6m","Bibi Andersson"],x:"An aging professor confronts regret and mortality on a road trip through his own memories."},
+{t:"8\u00bd",y:1963,d:"Federico Fellini",g:["Drama","Fantasy"],c:["Marcello Mastroianni","Claudia Cardinale","Anouk Aim\u00e9e"],x:"A blocked film director retreats into fantasy and memory while his crew waits for a script that isn't coming."},
+{t:"La Dolce Vita",y:1960,d:"Federico Fellini",g:["Comedy","Drama"],c:["Marcello Mastroianni","Anita Ekberg","Anouk Aim\u00e9e"],x:"A tabloid journalist drifts through Rome's decadent high society over seven restless nights and dawns."},
+{t:"Persona",y:1966,d:"Ingmar Bergman",g:["Drama"],c:["Bibi Andersson","Liv Ullmann"],x:"A nurse and her mute actress patient's identities begin to dangerously merge during an isolated seaside stay."},
+{t:"Battleship Potemkin",y:1925,d:"Sergei Eisenstein",g:["Drama","History","War"],c:["Aleksandr Antonov","Vladimir Barsky"],x:"A crew's mutiny against brutal officers ignites revolution in the streets of Odessa."},
+{t:"The 400 Blows",y:1959,d:"Fran\u00e7ois Truffaut",g:["Crime","Drama"],c:["Jean-Pierre L\u00e9aud","Albert R\u00e9my"],x:"A neglected Parisian boy drifts into petty crime and reform school, seeking any form of freedom."},
+{t:"Breathless",y:1960,d:"Jean-Luc Godard",g:["Crime","Drama","Romance"],c:["Jean-Paul Belmondo","Jean Seberg"],x:"A small-time car thief and killer hides out with an American girlfriend as police close in."},
+{t:"Jules et Jim",y:1962,d:"Fran\u00e7ois Truffaut",g:["Drama","Romance"],c:["Jeanne Moreau","Oskar Werner","Henri Serre"],x:"Two friends and the free-spirited woman they both love navigate decades of a shifting, unconventional bond."},
+{t:"The Third Man",y:1949,d:"Carol Reed",g:["Film-Noir","Mystery","Thriller"],c:["Orson Welles","Joseph Cotten","Alida Valli"],x:"A pulp novelist investigates the suspicious death of an old friend amid postwar Vienna's black market."},
+{t:"Touch of Evil",y:1958,d:"Orson Welles",g:["Crime","Drama","Film-Noir"],c:["Charlton Heston","Janet Leigh","Orson Welles"],x:"A corrupt border-town police captain frames a suspect while a Mexican narcotics officer investigates."}
+];
+
+const GENRES = [...new Set(MOVIES.flatMap(m => m.g))].sort();
+const slug = m => (m.t + '-' + m.y).toLowerCase().replace(/[^a-z0-9]+/g,'-');
+
+let watched = new Set();
+let state = { q:'', genre:'All', status:'all', sort:'rank' };
+
+async function loadWatched(){
+  try{
+    const r = await window.storage.get('canon-watched-v1');
+    if(r && r.value) watched = new Set(JSON.parse(r.value));
+  }catch(e){ /* no saved state yet */ }
+  render();
+}
+async function saveWatched(){
+  try{ await window.storage.set('canon-watched-v1', JSON.stringify([...watched]), false); }
+  catch(e){ console.error('Save failed', e); }
+}
+
+function toggleWatched(id){
+  if(watched.has(id)) watched.delete(id); else watched.add(id);
+  saveWatched();
+  render();
+}
+
+function buildGenreChips(){
+  const row = document.getElementById('genreRow');
+  const chips = ['All', ...GENRES];
+  row.innerHTML = chips.map(g =>
+    `<button class="chip${state.genre===g?' active':''}" data-genre="${g}">${g}</button>`
+  ).join('');
+  row.querySelectorAll('.chip').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ state.genre = btn.dataset.genre; buildGenreChips(); render(); });
+  });
+}
+
+function matches(m){
+  const id = slug(m);
+  if(state.status==='watched' && !watched.has(id)) return false;
+  if(state.status==='unwatched' && watched.has(id)) return false;
+  if(state.genre!=='All' && !m.g.includes(state.genre)) return false;
+  if(state.q){
+    const q = state.q.toLowerCase();
+    const hay = (m.t + ' ' + m.c.join(' ')).toLowerCase();
+    if(!hay.includes(q)) return false;
+  }
+  return true;
+}
+
+function sortList(list){
+  if(state.sort==='az') return [...list].sort((a,b)=>a.t.localeCompare(b.t));
+  if(state.sort==='year') return [...list].sort((a,b)=>a.y-b.y);
+  return list;
+}
+
+function render(){
+  const total = MOVIES.length;
+  document.getElementById('subCount').textContent = total + ' essential films \u00b7 a personal watchlist';
+  const watchedCount = MOVIES.filter(m=>watched.has(slug(m))).length;
+  document.getElementById('progressFill').style.width = (watchedCount/total*100)+'%';
+  document.getElementById('progressCount').textContent = watchedCount + ' / ' + total;
+
+  const filtered = sortList(MOVIES.filter(matches));
+  const list = document.getElementById('list');
+
+  if(filtered.length===0){
+    list.innerHTML = '<div class="empty">No films match those filters.</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map((m,i)=>{
+    const id = slug(m);
+    const isWatched = watched.has(id);
+    const rank = MOVIES.indexOf(m)+1;
+    return `
+    <div class="card${isWatched?' watched':''}" data-id="${id}">
+      <div class="card-main" data-toggle-detail="${id}">
+        <div class="card-top">
+          <div class="card-title">${m.t}</div>
+          <div class="card-year">${m.y}</div>
+        </div>
+        <div class="card-director">${m.d}</div>
+        <div class="card-genres">${m.g.join(' \u00b7 ')}</div>
+        <div class="card-detail" id="detail-${id}">
+          <div class="card-desc">${m.x}</div>
+          <div class="card-cast"><b>Cast:</b> ${m.c.map(name=>`<span class="cast-name" data-actor="${name}">${name}</span>`).join(', ')}</div>
+        </div>
+      </div>
+      <div class="stub" data-toggle-watch="${id}">
+        <div class="punch${isWatched?' on':''}">&#10003;</div>
+        <div class="rank">#${rank}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('[data-toggle-watch]').forEach(el=>{
+    el.addEventListener('click', (e)=>{ e.stopPropagation(); toggleWatched(el.dataset.toggleWatch); });
+  });
+  list.querySelectorAll('[data-toggle-detail]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const id = el.dataset.toggleDetail;
+      document.getElementById('detail-'+id).classList.toggle('open');
+    });
+  });
+  list.querySelectorAll('.cast-name').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      document.getElementById('search').value = el.dataset.actor;
+      state.q = el.dataset.actor;
+      render();
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+  });
+}
+
+document.getElementById('search').addEventListener('input', e=>{ state.q = e.target.value; render(); });
+document.querySelectorAll('.status-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.status-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    state.status = btn.dataset.status;
+    render();
+  });
+});
+document.getElementById('sortSelect').addEventListener('change', e=>{ state.sort = e.target.value; render(); });
+
+buildGenreChips();
+loadWatched();
+</script>
+</body>
+</html>
